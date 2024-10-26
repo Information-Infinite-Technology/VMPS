@@ -1,0 +1,27 @@
+video:
+  meta:
+    width: 1920
+    height: 1080
+    bitrate: "1500k"
+    fps: 25
+  clips:
+    - path: "/mnt/disk2/home/vv/workspace/VMPS/example/bg.mp4"
+      span: ["00:00:00.000", "00:00:10.000"]
+    - path: "/mnt/disk2/home/vv/workspace/VMPS/example/bg.mp4"
+      span: ["00:00:10.000", "00:00:15.000"]
+    - path: "/mnt/disk2/home/vv/workspace/VMPS/example/fg.alpha.mov"
+      layer: 1
+      posX: 50
+      posY: 50
+      width: 240
+      height: 360
+      span: ["00:00:02.000", "00:00:04.000"]
+    - path: "/mnt/disk2/home/vv/workspace/VMPS/example/fg.mp4"
+      layer: 1
+      posX: 100
+      posY: 100
+      width: 480
+      height: 720
+      span: ["00:00:06.000", "00:00:09.000"]
+
+
