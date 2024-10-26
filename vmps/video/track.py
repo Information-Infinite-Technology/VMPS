@@ -84,9 +84,9 @@ class VideoClip:
         if actual_duration < expected_duration:
             extension_duration = expected_duration - actual_duration
             if self.extension == "repeat_first":
-                vf_filters.append(f"tpad=start_duration={extension_duration},fps={self.fps}")
+                vf_filters.append(f"tpad=start_duration={extension_duration}:start_mode=clone, fps={self.fps}")
             elif self.extension == "repeat_last":
-                vf_filters.append(f"tpad=stop_duration={extension_duration},fps={self.fps}")
+                vf_filters.append(f"tpad=stop_duration={extension_duration}:stop_mode=clone, fps={self.fps}")
             else:
                 raise NotImplementedError(f"Extension method '{self.extension}' is not implemented")
 

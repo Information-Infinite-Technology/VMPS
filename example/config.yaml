@@ -15,13 +15,13 @@ video:
       posY: 50
       width: 240
       height: 360
-      span: ["00:00:02.000", "00:00:04.000"]
+      span: ["00:00:02.000", "00:00:08.000"]
     - path: "/mnt/disk2/home/vv/workspace/VMPS/example/fg.mp4"
       layer: 1
       posX: 100
       posY: 100
       width: 480
       height: 720
-      span: ["00:00:06.000", "00:00:09.000"]
+      span: ["00:00:09.000", "00:00:12.000"]
 
 
