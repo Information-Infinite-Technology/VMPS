@@ -23,6 +23,16 @@ class AudioClip:
         channel: int = 0,
         sample_rate: Optional[int] = 44100,
     ):
+        """
+        Args:
+            track: AudioTrack object
+            workspace: Path to workspace directory
+            path: Path to audio or video file (audio track will be extracted)
+            span: Tuple of start and end timecodes
+            clip: Optional tuple of start and end timecodes to clip the audio
+            channel: Channel number of the audio clip, defaults to 0
+            sample_rate: Sample rate of the audio clip, defaults to 44100 Hz
+        """
         self.workspace = Path(workspace)
         self.asset = Path(path)
         self.track = track

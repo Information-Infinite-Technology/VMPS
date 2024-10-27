@@ -31,6 +31,23 @@ class VideoClip:
         posX: int = 0,
         posY: int = 0,
     ):
+        """
+        Args:
+            track (VideoTrack): Video track
+            workspace (Path | str): Workspace path
+            path (Path | str): Path to video or image
+            span (Tuple[str, str]): Start and end timecodes
+            clip (Optional[Tuple[str, str]], optional): Start and end timecodes to clip. Defaults to None.
+            width (Optional[int], optional): Width of the video. Defaults to None.
+            height (Optional[int], optional): Height of the video. Defaults to None.
+            bitrate (Optional[str], optional): Bitrate of the video. Defaults to None.
+            fps (Optional[int], optional): Frames per second. Defaults to None.
+            extension (str, optional): Extension method. Options: "repeat_first", "repeat_last". Defaults to "repeat_last".
+            shrink (str, optional): Shrink method. Options: "trim_start", "trim_end". Defaults to "trim_end".
+            layer (int, optional): Layer of the clip. Defaults to 0.
+            posX (int, optional): X position of the clip. Defaults to 0.
+            posY (int, optional): Y position of the clip. Defaults to 0.
+        """
         self.workspace = Path(workspace)
         self.asset = Path(path)
         self.span = span
