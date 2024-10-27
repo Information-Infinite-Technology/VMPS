@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import subprocess
 from pathlib import Path
@@ -14,9 +16,9 @@ from vmps.video.utils import get_video_codec
 class VideoClip:
     def __init__(
         self,
-        track,
-        workspace: Path,
-        path: Path,
+        track: VideoTrack,
+        workspace: Path | str,
+        path: Path | str,
         span: Tuple[str, str],
         clip: Optional[Tuple[str, str]] = None,
         width: Optional[int] = None,
@@ -29,6 +31,7 @@ class VideoClip:
         posX: int = 0,
         posY: int = 0,
     ):
+        self.workspace = Path(workspace)
         self.asset = Path(path)
         self.span = span
         self.clip = clip
@@ -42,12 +45,18 @@ class VideoClip:
         self.posX = posX
         self.posY = posY
         self.codec = get_video_codec(self.asset)
+        assert self.codec, f"Failed to get codec for {self.asset}"
+
         self.normalized = False
-        self.path = (workspace / f"{uuid4().hex}").with_suffix(self.asset.suffix)
-        workspace.mkdir(parents=True, exist_ok=True)
+        self.path = (self.workspace / f"{uuid4().hex}").with_suffix(self.asset.suffix)
+        self.workspace.mkdir(parents=True, exist_ok=True)
 
         self.track = track
         self.track.add_clip(self)
+
+    @property
+    def duration(self):
+        return timecode2seconds(self.span[1]) - timecode2seconds(self.span[0])
 
     def normalize(self):
         if self.normalized:
@@ -74,11 +83,14 @@ class VideoClip:
         assert filetype.is_video(self.asset), f"Unsupported file type: {self.asset}"
 
         ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning", "-i", self.asset.as_posix()]
+        actual_duration = float(ffmpeg.probe(self.asset.as_posix())["streams"][0]["duration"])
         if self.clip:
-            ffmpeg_cmd.extend(["-ss", self.clip[0], "-to", self.clip[1]])
-            actual_duration = timecode2seconds(self.clip[1]) - timecode2seconds(self.clip[0])
-        else:
-            actual_duration = float(ffmpeg.probe(self.asset.as_posix())["streams"][0]["duration"])
+            if self.clip[1]:
+                ffmpeg_cmd.extend(["-to", self.clip[1]])
+                actual_duration = timecode2seconds(self.clip[1])
+            if self.clip[0]:
+                ffmpeg_cmd.extend(["-ss", self.clip[0]])
+                actual_duration -= timecode2seconds(self.clip[0])
 
         vf_filters = [f"scale={self.width}:{self.height}"]
         if actual_duration < expected_duration:
@@ -114,8 +126,8 @@ class VideoClip:
 
 
 class VideoTrack:
-    def __init__(self, workspace, width: int, height: int, bitrate: str, fps: int):
-        self.workspace = workspace
+    def __init__(self, workspace: Path | str, width: int, height: int, bitrate: str, fps: int):
+        self.workspace = Path(workspace)
         self.width = width
         self.height = height
         self.bitrate = bitrate
@@ -129,6 +141,14 @@ class VideoTrack:
             self.clips_base.append(clip)
         else:
             self.clips_overlay.append(clip)
+
+    def add_clips_from_config(self, configs):
+        for config in configs:
+            VideoClip(self, self.workspace / "clips", **config)
+
+    @property
+    def duration(self):
+        return timecode2seconds(self.clips_base[-1].span[1])
 
     def sanity_check(self):
         for i in range(len(self.clips_base) - 1):
@@ -148,7 +168,6 @@ class VideoTrack:
         assert (
             timecode2seconds(self.clips_base[0].span[0]) == 0
         ), f"base clips should start at 00:00:00.000: {self.clips_base[0].span[0]}"
-        self.duration = timecode2seconds(self.clips_base[-1].span[1])
         self.sanity_check()
         for clip in self.clips_base + self.clips_overlay:
             clip.normalize()
@@ -203,7 +222,7 @@ class VideoTrack:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    path_to_config = "/mnt/disk2/home/vv/workspace/VMPS/example/config.yaml"
+    path_to_config = Path("./example/config.yaml").absolute()
     workspace = Path("./workspace/example/video").absolute()
     workspace.mkdir(parents=True, exist_ok=True)
     with open(path_to_config) as f:

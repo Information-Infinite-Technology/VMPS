@@ -1,0 +1,22 @@
+[project]
+name = "vmps"
+version = "0.1.0"
+description = "A project for managing audio, video, and subtitle processing tasks."
+authors = [{ name = "Wei Wang", email = "wangwei.sjtu@sjtu.edu.cn" }]
+license = { text = "MIT" }
+keywords = ["audio", "video", "subtitle", "processing"]
+
+
+dependencies = [
+    "ffmpeg-python",
+    "PyYAML",
+    "filetype"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["vmps", "vmps.audio", "vmps.video", "vmps.subtitle"]
+
