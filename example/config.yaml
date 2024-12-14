@@ -6,18 +6,22 @@ video:
     bitrate: "1500k"
     fps: 25
   clips:
-    - path: "example/bg.mp4"
+    - uid: 'video-clip-1'
+      path: "example/bg.mp4"
       span: ["00:00:00.000", "00:00:10.000"]
-    - path: "example/bg.mp4"
+    - uid: 'video-clip-2'
+      path: "example/bg.mp4"
       span: ["00:00:10.000", "00:00:15.000"]
-    - path: "example/fg.alpha.mov"
+    - uid: 'video-clip-3'
+      path: "example/fg.alpha.mov"
       layer: 1
       posX: 50
       posY: 50
       width: 240
       height: 360
       span: ["00:00:02.000", "00:00:08.000"]
-    - path: "example/fg.mp4"
+    - uid: 'video-clip-4'
+      path: "example/fg.mp4"
       layer: 1
       posX: 100
       posY: 100
@@ -28,19 +32,23 @@ audio:
   meta:
     sample_rate: 16000
   clips:
-    - path: "example/audio.wav"
+    - uid: 'audio-clip-1'
+      path: "example/audio.wav"
       span: ["00:00:04.000", "00:00:06.000"]
       clip: ["00:00:00.000", "00:00:02.000"]
-    - path: "example/audio.wav"
+    - uid: 'audio-clip-2'
+      path: "example/audio.wav"
       span: ["00:00:01.000", "00:00:03.000"]
       clip: ["00:00:00.000", "00:00:02.000"]
-    - path: "example/audio.wav"
+    - uid: 'audio-clip-3'
+      path: "example/audio.wav"
       span: ["00:00:11.000", "00:00:16.000"]
       clip: ["00:00:00.000", "00:00:02.000"]
       loop: true
       volume: 2
       channel: 1
-    - path: "example/audio.wav"
+    - uid: 'audio-clip-4'
+      path: "example/audio.wav"
       span: ["00:00:08.000", "00:00:11.000"]
       clip: ["00:00:00.000", "00:00:03.000"]
       channel: 2

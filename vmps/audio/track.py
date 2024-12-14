@@ -19,6 +19,7 @@ class AudioClip:
         self,
         track: AudioTrack,
         workspace: Path | str,
+        uid: str,
         path: Path | str,
         span: Tuple[str, str],
         clip: Optional[Tuple[str, str]] = None,
@@ -29,6 +30,7 @@ class AudioClip:
     ):
         """
         Args:
+            uid: Unique identifier of the audio clip
             track: AudioTrack object
             workspace: Path to workspace directory
             path: Path to audio or video file (audio track will be extracted)
@@ -41,6 +43,7 @@ class AudioClip:
         """
         self.workspace = Path(workspace)
         self.asset = Path(path)
+        self.uid = uid
         self.track = track
         self.channel = channel
         self.sample_rate = sample_rate if sample_rate else track.sample_rate
@@ -103,7 +106,7 @@ class AudioClip:
         ffmpeg_cmd.append(self.path.as_posix())
 
         try:
-            logger.info(f"Normalizing {self.asset} to {self.path}, with command {' '.join(ffmpeg_cmd)}")
+            logger.info(f"Normalizing {self.uid}: {' '.join(ffmpeg_cmd)}")
             subprocess.run(ffmpeg_cmd, check=True)
             self.normalized = True
         except subprocess.CalledProcessError as e:
@@ -185,7 +188,7 @@ class AudioTrack:
         ffmpeg_cmd.append(self.path.as_posix())
 
         try:
-            logger.info(" ".join(ffmpeg_cmd))
+            logger.info(f"Processing audio track: {' '.join(ffmpeg_cmd)}")
             subprocess.run(ffmpeg_cmd, check=True)
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Failed to process audio track: {e}")
@@ -193,7 +196,11 @@ class AudioTrack:
     def process_one_channel(self, channel: int, audio_channel_path: Path):
         clips = [clip for clip in self.clips if clip.channel == channel]
         for clip in clips:
-            clip.normalize()
+            try:
+                clip.normalize()
+            except:
+                logger.fatal(f"Failed to normalize clip {clip.uid}")
+                raise
 
         inputs = []
         filters = []

@@ -12,12 +12,15 @@ import yaml
 from vmps.utils import timecode2seconds
 from vmps.video.utils import get_video_codec
 
+logger = logging.getLogger("vmps")
+
 
 class VideoClip:
     def __init__(
         self,
         track: VideoTrack,
         workspace: Path | str,
+        uid: str,
         path: Path | str,
         span: Tuple[str, str],
         clip: Optional[Tuple[str, str]] = None,
@@ -33,6 +36,7 @@ class VideoClip:
     ):
         """
         Args:
+            uid (VideoTrack): Unique identifier
             track (VideoTrack): Video track
             workspace (Path | str): Workspace path
             path (Path | str): Path to video or image
@@ -50,6 +54,7 @@ class VideoClip:
         """
         self.workspace = Path(workspace)
         self.asset = Path(path)
+        self.uid = uid
         self.span = span
         self.clip = clip
         self.width = width if width else track.width
@@ -79,7 +84,6 @@ class VideoClip:
         if self.normalized:
             return
 
-        logging.info(f"Normalizing {self.asset} to {self.path}")
 
         expected_duration = timecode2seconds(self.span[1]) - timecode2seconds(self.span[0])
         if filetype.is_image(self.asset):
@@ -91,6 +95,7 @@ class VideoClip:
             ffmpeg_cmd.extend(["-b:v", self.bitrate])
             ffmpeg_cmd.append(self.path.as_posix())
             try:
+                logger.info(f"Normalizing {self.uid}: {' '.join(ffmpeg_cmd)}")
                 subprocess.run(ffmpeg_cmd, check=True)
                 self.normalized = True
             except subprocess.CalledProcessError as e:
@@ -135,7 +140,7 @@ class VideoClip:
         ffmpeg_cmd.append(self.path.as_posix())
 
         try:
-            logging.info(" ".join(ffmpeg_cmd))
+            logger.info(f"Normalizing {self.uid}: {' '.join(ffmpeg_cmd)}")
             subprocess.run(ffmpeg_cmd, check=True)
             self.normalized = True
         except subprocess.CalledProcessError as e:
@@ -187,7 +192,11 @@ class VideoTrack:
         ), f"base clips should start at 00:00:00.000: {self.clips_base[0].span[0]}"
         self.sanity_check()
         for clip in self.clips_base + self.clips_overlay:
-            clip.normalize()
+            try:
+                clip.normalize()
+            except:
+                logger.fail(f"Failed to normalize clip {clip.uid}")
+                raise
 
         # make base video
         base_video_path = self.workspace / "base.mp4"
@@ -231,7 +240,7 @@ class VideoTrack:
         ffmpeg_cmd.append(self.path.as_posix())
 
         try:
-            logging.info(" ".join(ffmpeg_cmd))
+            logger.info(f"Processing video track: {' '.join(ffmpeg_cmd)}")
             subprocess.run(ffmpeg_cmd, check=True)
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Failed to generate video track: {e}")
