@@ -11,6 +11,8 @@ import filetype
 import yaml
 from vmps.utils import timecode2seconds
 
+logger = logging.getLogger("vmps")
+
 
 class AudioClip:
     def __init__(
@@ -21,6 +23,8 @@ class AudioClip:
         span: Tuple[str, str],
         clip: Optional[Tuple[str, str]] = None,
         channel: int = 0,
+        volume: Optional[float] = None,
+        loop: bool = False,
         sample_rate: Optional[int] = 44100,
     ):
         """
@@ -31,6 +35,8 @@ class AudioClip:
             span: Tuple of start and end timecodes
             clip: Optional tuple of start and end timecodes to clip the audio
             channel: Channel number of the audio clip, defaults to 0
+            volume: Volume of the audio clip, defaults to None (e.g. 0 means mute, 2 means double; or use Decibel values like 10dB, -5dB, see https://trac.ffmpeg.org/wiki/AudioVolume)
+            loop: if True, clip will be looped to match the required duration
             sample_rate: Sample rate of the audio clip, defaults to 44100 Hz
         """
         self.workspace = Path(workspace)
@@ -42,6 +48,8 @@ class AudioClip:
         self.clip = clip
         self.path = self.workspace / f"{uuid4().hex}.wav"
         self.track = track
+        self.volume = volume
+        self.loop = loop
         self.track.add_clip(self)
 
         self.workspace.mkdir(parents=True, exist_ok=True)
@@ -67,22 +75,40 @@ class AudioClip:
                 actual_duration -= timecode2seconds(self.clip[0])
 
         expected_duration = timecode2seconds(self.span[1]) - timecode2seconds(self.span[0])
-        assert (
-            actual_duration == expected_duration
-        ), f"Actual duration {actual_duration} != expected duration {expected_duration}"
+        if actual_duration > expected_duration:
+            raise ValueError(
+                f"Actual duration {actual_duration} > expected duration {expected_duration}"
+            )
+        elif actual_duration < expected_duration and not self.loop:
+            raise ValueError(
+                f"Actual duration {actual_duration} < expected duration {expected_duration}, set loop=True to loop the clip"
+            )
+
+        filter_complex = []
+        if self.loop and actual_duration < expected_duration:
+            loop_count = int(expected_duration // actual_duration) + 1
+            filter_complex.append(
+                f"aloop=loop={loop_count}:size={int(self.sample_rate * actual_duration)},"
+                f"atrim=duration={expected_duration}"
+            )
+
+        if self.volume is not None:
+            filter_complex.append(f"volume={self.volume}")
 
         ffmpeg_cmd.extend(["-i", self.asset.as_posix()])
-        ffmpeg_cmd.extend(["-map", f"0:a:0"])
+        if filter_complex:
+            ffmpeg_cmd.extend(["-filter_complex", ",".join(filter_complex)])
         ffmpeg_cmd.extend(["-ar", str(self.sample_rate)])
         ffmpeg_cmd.extend(["-ac", "1"])
         ffmpeg_cmd.append(self.path.as_posix())
 
         try:
-            logging.info(f"Normalizing {self.asset} to {self.path}")
+            logger.info(f"Normalizing {self.asset} to {self.path}, with command {' '.join(ffmpeg_cmd)}")
             subprocess.run(ffmpeg_cmd, check=True)
             self.normalized = True
         except subprocess.CalledProcessError as e:
-            raise ValueError(f"Failed to normalize audio clip: {e}")
+            logger.fatal(f"Failed to normalize {self.asset}: {e}")
+            raise e
 
 
 class AudioTrack:
@@ -107,11 +133,15 @@ class AudioTrack:
 
         # clips within same channel do not overlap
         for channel in channels:
-            clips = sorted([clip for clip in self.clips if clip.channel == channel], key=lambda x: x.span[0])
+            clips = sorted(
+                [clip for clip in self.clips if clip.channel == channel], key=lambda x: x.span[0]
+            )
             for prev_clip, clip in zip(clips[:-1], clips[1:]):
                 prev_end = timecode2seconds(prev_clip.span[1])
                 cur_start = timecode2seconds(clip.span[0])
-                assert cur_start >= prev_end, f"Clips {prev_clip.span} and {clip.span} must not overlap"
+                assert (
+                    cur_start >= prev_end
+                ), f"Clips {prev_clip.span} and {clip.span} must not overlap"
 
     @property
     def duration(self):
@@ -135,12 +165,17 @@ class AudioTrack:
             ffmpeg_cmd.extend(["-i", audio_channel_path.as_posix()])
 
         filter_complex = "".join(
-            f"[{c}:a]anull[a{c}];" if c in channels_with_max_duration else f"[{c}:a]apad[a{c}];" for c in channels
+            f"[{c}:a]anull[a{c}];" if c in channels_with_max_duration else f"[{c}:a]apad[a{c}];"
+            for c in channels
         )
 
         num_channels = len(audio_channel_paths)
         filter_complex += (
-            "".join(f"[a{i}]" for i in list(channels - channels_with_max_duration) + list(channels_with_max_duration))
+            "".join(
+                f"[a{i}]"
+                for i in list(channels - channels_with_max_duration)
+                + list(channels_with_max_duration)
+            )
             + f"join=inputs={num_channels}:channel_layout={num_channels}c[out]"
         )
 
@@ -150,7 +185,7 @@ class AudioTrack:
         ffmpeg_cmd.append(self.path.as_posix())
 
         try:
-            logging.info(ffmpeg_cmd)
+            logger.info(" ".join(ffmpeg_cmd))
             subprocess.run(ffmpeg_cmd, check=True)
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Failed to process audio track: {e}")
@@ -180,7 +215,7 @@ class AudioTrack:
         ffmpeg_cmd.append(audio_channel_path.as_posix())
 
         try:
-            logging.info(ffmpeg_cmd)
+            logger.info(ffmpeg_cmd)
             subprocess.run(ffmpeg_cmd, check=True)
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Failed to process channel {channel} of audio track: {e}")

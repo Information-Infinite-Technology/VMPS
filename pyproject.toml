@@ -1,6 +1,6 @@
 [project]
 name = "vmps"
-version = "0.1.0"
+version = "0.2.0"
 description = "A project for managing audio, video, and subtitle processing tasks."
 authors = [{ name = "Wei Wang", email = "wangwei.sjtu@sjtu.edu.cn" }]
 license = { text = "MIT" }
