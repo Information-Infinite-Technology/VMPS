@@ -9,15 +9,9 @@ logger = logging.getLogger("vmps")
 
 class Style:
     """
-    Check http://www.tcax.org/docs/ass-specs.htm, section [5. Style Lines, [v4+ Styles] section] for details of the parameters
+    Check http://www.tcax.org/docs/ass-specs.htm, section "5. Style Lines, [v4+ Styles] section" for details of the parameters
     Note that for bool parameters: -1 denotes true and 0 denotes false
     """
-
-    @classmethod
-    def default(cls):
-        default_style = cls()
-        default_style.name = "Default"
-        return default_style
 
     def __init__(
         self,
@@ -82,7 +76,7 @@ class Subtitle:
     def __init__(self, workspace: Path | str):
         self.workspace = Path(workspace)
         self.styles: List[Style] = []
-        self.styles.append(Style.default())
+        self.styles.append(Style())
         self.clips: List[str] = []
         self.workspace.mkdir(parents=True, exist_ok=True)
         self.path = workspace / "subtitle.ass"
@@ -100,6 +94,7 @@ class Subtitle:
         Args:
             span (Tuple[str, str]): A tuple of two string timecodes representing the start and end of the clip
             text (str): The text to be displayed
+            layer (str): Th layer of the subtitle
             style_kwargs (Dict): The style of the text, see Style class for details
         """
         try:
