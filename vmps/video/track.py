@@ -40,7 +40,7 @@ class VideoClip:
             track (VideoTrack): Video track
             workspace (Path | str): Workspace path
             path (Path | str): Path to video or image
-            span (Tuple[str, str]): Start and end timecodes
+            span (Tuple[str, str]): Start and end timecodes, HH:MM:SS.mmm, e.g., ("00:00:00.000", "00:00:05.000")
             clip (Optional[Tuple[str, str]], optional): Start and end timecodes to clip. Defaults to None.
             width (Optional[int], optional): Width of the video. Defaults to None.
             height (Optional[int], optional): Height of the video. Defaults to None.

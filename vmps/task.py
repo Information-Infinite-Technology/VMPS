@@ -9,24 +9,34 @@ import yaml
 
 from vmps.audio.track import AudioClip, AudioTrack
 from vmps.video.track import VideoClip, VideoTrack
+from vmps.subtitle.subtitle import Subtitle
 
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.WARNING
+)
+logger = logging.getLogger("vmps")
 
 class VMPSTask:
     def __init__(self, config: Dict):
-        workspace = Path(tempfile.TemporaryDirectory().name)
-        workspace.mkdir(parents=True, exist_ok=True)
+        self.workspace = Path(tempfile.TemporaryDirectory().name)
+        self.workspace.mkdir(parents=True, exist_ok=True)
         self.output = Path(config["output"])
         if "video" in config:
-            self.video_track = VideoTrack(workspace / "video", **config["video"]["meta"])
+            self.video_track = VideoTrack(self.workspace / "video", **config["video"]["meta"])
             self.video_track.add_clips_from_config(config["video"]["clips"])
         else:
             self.video_track = None
 
         if "audio" in config:
-            self.audio_track = AudioTrack(workspace / "audio", **config["audio"]["meta"])
+            self.audio_track = AudioTrack(self.workspace / "audio", **config["audio"]["meta"])
             self.audio_track.add_clips_from_config(config["audio"]["clips"])
         else:
             self.audio_track = None
+
+        if "subtitle" in config:
+            self.subtitle = Subtitle(self.workspace / "subtitle")
+            self.subtitle.add_clips_from_config(config["subtitle"]["clips"])
+
 
     def sanity_check(self):
         if self.video_track and self.audio_track:
@@ -40,33 +50,35 @@ class VMPSTask:
             self.video_track.process()
         if self.audio_track:
             self.audio_track.process()
+        if self.subtitle:
+            self.subtitle.process()
 
-        if self.video_track and self.audio_track:
-            ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning"]
+        ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning"]
+        if self.video_track:
             ffmpeg_cmd.extend(["-i", self.video_track.path.as_posix()])
-            ffmpeg_cmd.extend(["-i", self.audio_track.path.as_posix()])
-            ffmpeg_cmd.extend(["-filter_complex", f"[1:a]apad,atrim=duration={self.video_track.duration}[aud]"])
-            ffmpeg_cmd.extend(["-map", "0:v"])
-            ffmpeg_cmd.extend(["-map", "[aud]"])
-            ffmpeg_cmd.extend(["-c:v", "copy"])
-            ffmpeg_cmd.extend(["-c:a", "aac"])
+            if self.audio_track:
+                ffmpeg_cmd.extend(["-i", self.audio_track.path.as_posix()])
+                ffmpeg_cmd.extend(["-filter_complex", f"[1:a]apad,atrim=duration={self.video_track.duration}[aud]"])
+                ffmpeg_cmd.extend(["-map", "0:v"])
+                ffmpeg_cmd.extend(["-map", "[aud]"])
+                ffmpeg_cmd.extend(["-c:v", "libx264"])
+                ffmpeg_cmd.extend(["-c:a", "aac"])
+            if self.subtitle:
+                ffmpeg_cmd.extend(["-vf", f"subtitles={self.subtitle.path.as_posix()}"])
             ffmpeg_cmd.append(self.output.as_posix())
-            try:
-                logging.info(ffmpeg_cmd)
-                subprocess.run(ffmpeg_cmd, check=True)
-            except subprocess.CalledProcessError as e:
-                raise ValueError(f"Failed to merge video and audio: {e}")
-        elif self.video_track:
-            shutil.move(self.video_track.path, self.output)
+            logger.info(f"Excuting: {' '.join(ffmpeg_cmd)}")
+            subprocess.run(ffmpeg_cmd, check=True)
         elif self.audio_track:
             shutil.move(self.audio_track.path, self.output)
         else:
             raise ValueError("No video or audio track found.")
 
+    def clean(self):
+        shutil.rmtree(self.workspace)
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     with open("example/config.yaml") as f:
         config = yaml.safe_load(f)
     task = VMPSTask(config)
     task.process()
+    task.clean()

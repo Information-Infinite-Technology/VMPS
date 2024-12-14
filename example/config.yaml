@@ -42,7 +42,7 @@ audio:
       clip: ["00:00:00.000", "00:00:02.000"]
     - uid: 'audio-clip-3'
       path: "example/audio.wav"
-      span: ["00:00:11.000", "00:00:16.000"]
+      span: ["00:00:11.000", "00:00:14.000"]
       clip: ["00:00:00.000", "00:00:02.000"]
       loop: true
       volume: 2
@@ -52,4 +52,22 @@ audio:
       span: ["00:00:08.000", "00:00:11.000"]
       clip: ["00:00:00.000", "00:00:03.000"]
       channel: 2
+
+subtitle:
+  clips:
+    - uid: 'subtitle-clip-1'
+      text: "Clip 1 test"
+      fontsize: 24
+      primary_colour: "&H00FF0000"
+      span: ["00:00:00.000", "00:00:02.000"]
+    - uid: 'subtitle-clip-2'
+      text: "Clip 2 test"
+      fontsize: 28
+      primary_colour: "&H0000FF00"
+      span: ["00:00:02.000", "00:00:04.000"]
+    - uid: 'subtitle-clip-3'
+      text: "Clip 3 test"
+      fontsize: 12
+      primary_colour: "&H000000FF"
+      span: ["00:00:04.000", "00:00:06.000"]
 
