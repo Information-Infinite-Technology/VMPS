@@ -1,0 +1,10 @@
+Metadata-Version: 2.2
+Name: vmps
+Version: 0.2.0
+Summary: A project for managing audio, video, and subtitle processing tasks.
+Author-email: Wei Wang <wangwei.sjtu@sjtu.edu.cn>
+License: MIT
+Keywords: audio,video,subtitle,processing
+Requires-Dist: ffmpeg-python
+Requires-Dist: PyYAML
+Requires-Dist: filetype
