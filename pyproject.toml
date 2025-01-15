@@ -10,7 +10,8 @@ keywords = ["audio", "video", "subtitle", "processing"]
 dependencies = [
     "ffmpeg-python",
     "PyYAML",
-    "filetype"
+    "filetype",
+    "minio"
 ]
 
 [build-system]
