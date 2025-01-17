@@ -36,6 +36,8 @@ class VMPSTask:
         if "subtitle" in config:
             self.subtitle = Subtitle(self.workspace / "subtitle")
             self.subtitle.add_clips_from_config(config["subtitle"]["clips"])
+        else:
+            self.subtitle = None
 
 
     def sanity_check(self):

@@ -7,6 +7,7 @@ vmps.egg-info/SOURCES.txt
 vmps.egg-info/dependency_links.txt
 vmps.egg-info/requires.txt
 vmps.egg-info/top_level.txt
+vmps/audio/__init__.py
 vmps/audio/track.py
 vmps/subtitle/__init__.py
 vmps/subtitle/subtitle.py
