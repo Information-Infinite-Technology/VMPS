@@ -20,6 +20,7 @@ class VideoClip:
         self,
         track: VideoTrack,
         workspace: Path | str,
+        data_dir: Path | str,
         uid: str,
         path: Path | str,
         span: Tuple[str, str],
@@ -53,7 +54,7 @@ class VideoClip:
             posY (int, optional): Y position of the clip. Defaults to 0.
         """
         self.workspace = Path(workspace)
-        self.asset = Path(path)
+        self.asset = data_dir / Path(path)
         self.uid = uid
         self.span = span
         self.clip = clip
@@ -148,8 +149,9 @@ class VideoClip:
 
 
 class VideoTrack:
-    def __init__(self, workspace: Path | str, width: int, height: int, bitrate: str, fps: int):
+    def __init__(self, workspace: Path | str, data_dir: Path | str, width: int, height: int, bitrate: str, fps: int):
         self.workspace = Path(workspace)
+        self.data_dir = Path(data_dir)
         self.width = width
         self.height = height
         self.bitrate = bitrate
@@ -166,7 +168,7 @@ class VideoTrack:
 
     def add_clips_from_config(self, configs):
         for config in configs:
-            VideoClip(self, self.workspace / "clips", **config)
+            VideoClip(self, self.workspace / "clips", self.data_dir, **config)
 
     @property
     def duration(self):

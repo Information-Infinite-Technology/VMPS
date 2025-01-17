@@ -17,18 +17,18 @@ logging.basicConfig(
 logger = logging.getLogger("vmps")
 
 class VMPSTask:
-    def __init__(self, config: Dict):
+    def __init__(self, data_dir, config: Dict):
         self.workspace = Path(tempfile.TemporaryDirectory().name)
         self.workspace.mkdir(parents=True, exist_ok=True)
-        self.output = Path(config["output"])
+        self.output = Path(data_dir) / config["output"]
         if "video" in config:
-            self.video_track = VideoTrack(self.workspace / "video", **config["video"]["meta"])
+            self.video_track = VideoTrack(self.workspace / "video", data_dir, **config["video"]["meta"])
             self.video_track.add_clips_from_config(config["video"]["clips"])
         else:
             self.video_track = None
 
         if "audio" in config:
-            self.audio_track = AudioTrack(self.workspace / "audio", **config["audio"]["meta"])
+            self.audio_track = AudioTrack(self.workspace / "audio", data_dir, **config["audio"]["meta"])
             self.audio_track.add_clips_from_config(config["audio"]["clips"])
         else:
             self.audio_track = None

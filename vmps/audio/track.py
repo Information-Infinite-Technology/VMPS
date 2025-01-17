@@ -19,6 +19,7 @@ class AudioClip:
         self,
         track: AudioTrack,
         workspace: Path | str,
+        data_dir: Path | str,
         uid: str,
         path: Path | str,
         span: Tuple[str, str],
@@ -42,7 +43,7 @@ class AudioClip:
             sample_rate: Sample rate of the audio clip, defaults to 44100 Hz
         """
         self.workspace = Path(workspace)
-        self.asset = Path(path)
+        self.asset = data_dir / Path(path)
         self.uid = uid
         self.track = track
         self.channel = channel
@@ -115,8 +116,9 @@ class AudioClip:
 
 
 class AudioTrack:
-    def __init__(self, workspace: Path | str, sample_rate: int):
+    def __init__(self, workspace: Path | str, data_dir: Path | str, sample_rate: int):
         self.workspace = workspace
+        self.data_dir = data_dir
         self.workspace.mkdir(parents=True, exist_ok=True)
         self.sample_rate = sample_rate
         self.clips = []
@@ -127,7 +129,7 @@ class AudioTrack:
 
     def add_clips_from_config(self, configs):
         for config in configs:
-            AudioClip(self, self.workspace / "clips", **config)
+            AudioClip(self, self.workspace / "clips", self.data_dir, **config)
 
     def sanity_check(self):
         # channel numbers are contiguous starting from 0
