@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import shutil
 import logging
 import subprocess
 from pathlib import Path
@@ -106,7 +108,12 @@ class VideoClip:
         assert filetype.is_video(self.asset), f"Unsupported file type: {self.asset}"
 
         ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning", "-i", self.asset.as_posix()]
-        actual_duration = float(ffmpeg.probe(self.asset.as_posix())["streams"][0]["duration"])
+        try:
+            actual_duration = float(ffmpeg.probe(self.asset.as_posix())["streams"][0]["duration"])
+        except ffmpeg.Error as e:
+            logger.error(e.stderr.decode("utf-8"))
+            raise e
+
         if self.clip:
             if self.clip[1]:
                 ffmpeg_cmd.extend(["-to", self.clip[1]])
@@ -216,6 +223,12 @@ class VideoTrack:
             raise ValueError(f"Failed to generate base video: {e}")
 
         if not self.clips_overlay:
+            try:
+                if not os.path.exists(base_video_path):
+                    raise FileNotFoundError(f"File {base_video_path} does not exist.")
+                shutil.copy(base_video_path, self.path)
+            except Exception as e:
+                raise ValueError(f"Failed to generate video track: {e}")
             return
 
         input_files = [base_video_path.as_posix()] + [clip.path.as_posix() for clip in self.clips_overlay]

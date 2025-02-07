@@ -69,7 +69,11 @@ class AudioClip:
             return
 
         ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning"]
-        actual_duration = float(ffmpeg.probe(self.asset.as_posix())["streams"][0]["duration"])
+        try:
+            actual_duration = float(ffmpeg.probe(self.asset.as_posix())["streams"][0]["duration"])
+        except ffmpeg.Error as e:
+            logger.error(e.stderr.decode("utf-8"))
+            raise e
         if self.clip:
             if self.clip[1]:
                 ffmpeg_cmd.extend(["-to", self.clip[1]])
