@@ -11,6 +11,7 @@ from uuid import uuid4
 import ffmpeg
 import filetype
 import yaml
+
 from vmps.utils import timecode2seconds
 from vmps.video.utils import get_video_codec
 
@@ -81,14 +82,13 @@ class VideoClip:
 
     @property
     def duration(self):
-        return timecode2seconds(self.span[1]) - timecode2seconds(self.span[0])
+        return round(timecode2seconds(self.span[1]) - timecode2seconds(self.span[0]), 4)
 
     def normalize(self):
         if self.normalized:
             return
 
-
-        expected_duration = timecode2seconds(self.span[1]) - timecode2seconds(self.span[0])
+        expected_duration = round(timecode2seconds(self.span[1]) - timecode2seconds(self.span[0]), 4)
         if filetype.is_image(self.asset):
             ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning", "-i", self.asset.as_posix()]
             ffmpeg_cmd.extend(["-loop", "1"])
@@ -124,7 +124,7 @@ class VideoClip:
 
         vf_filters = [f"scale={self.width}:{self.height}"]
         if actual_duration < expected_duration:
-            extension_duration = expected_duration - actual_duration
+            extension_duration = round(expected_duration - actual_duration, 4)
             if self.extension == "repeat_first":
                 vf_filters.append(f"tpad=start_duration={extension_duration}:start_mode=clone, fps={self.fps}")
             elif self.extension == "repeat_last":
@@ -134,7 +134,8 @@ class VideoClip:
 
         elif actual_duration > expected_duration:
             if self.shrink == "trim_start":
-                ffmpeg_cmd.extend(["-ss", str(actual_duration - expected_duration)])
+                seek_start_time = round(actual_duration - expected_duration, 4)
+                ffmpeg_cmd.extend(["-ss", str(seek_start_time)])
             elif self.shrink == "trim_end":
                 ffmpeg_cmd.extend(["-to", str(expected_duration)])
             else:
@@ -204,7 +205,7 @@ class VideoTrack:
             try:
                 clip.normalize()
             except:
-                logger.fail(f"Failed to normalize clip {clip.uid}")
+                logger.fatal(f"Failed to normalize clip {clip.uid}")
                 raise
 
         # make base video

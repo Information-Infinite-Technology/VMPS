@@ -7,8 +7,8 @@ from typing import Optional, Tuple
 from uuid import uuid4
 
 import ffmpeg
-import filetype
 import yaml
+
 from vmps.utils import timecode2seconds
 
 logger = logging.getLogger("vmps")
@@ -62,7 +62,7 @@ class AudioClip:
 
     @property
     def duration(self):
-        return timecode2seconds(self.span[1]) - timecode2seconds(self.span[0])
+        return round(timecode2seconds(self.span[1]) - timecode2seconds(self.span[0]), 4)
 
     def normalize(self):
         if self.normalized:
@@ -82,7 +82,8 @@ class AudioClip:
                 ffmpeg_cmd.extend(["-ss", self.clip[0]])
                 actual_duration -= timecode2seconds(self.clip[0])
 
-        expected_duration = timecode2seconds(self.span[1]) - timecode2seconds(self.span[0])
+        actual_duration = round(actual_duration, 4)
+        expected_duration = round(timecode2seconds(self.span[1]) - timecode2seconds(self.span[0]), 4)
         if actual_duration > expected_duration:
             raise ValueError(
                 f"Actual duration {actual_duration} > expected duration {expected_duration}"
