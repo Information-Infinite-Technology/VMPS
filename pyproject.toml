@@ -11,7 +11,6 @@ dependencies = [
     "ffmpeg-python",
     "PyYAML",
     "filetype",
-    "minio"
 ]
 
 [build-system]
