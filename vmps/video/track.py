@@ -90,9 +90,11 @@ class VideoClip:
 
         expected_duration = round(timecode2seconds(self.span[1]) - timecode2seconds(self.span[0]), 4)
         if filetype.is_image(self.asset):
-            ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning", "-i", self.asset.as_posix()]
+            self.path = self.path.with_suffix(".mp4")
+            ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning"]
             ffmpeg_cmd.extend(["-loop", "1"])
             ffmpeg_cmd.extend(["-t", str(expected_duration)])
+            ffmpeg_cmd.extend(["-i", self.asset.as_posix()])
             ffmpeg_cmd.extend(["-vf", f"scale={self.width}:{self.height}"])
             ffmpeg_cmd.extend(["-r", str(self.fps)])
             ffmpeg_cmd.extend(["-b:v", self.bitrate])
