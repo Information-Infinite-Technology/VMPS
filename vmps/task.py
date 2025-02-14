@@ -10,6 +10,7 @@ import yaml
 from vmps.audio.track import AudioClip, AudioTrack
 from vmps.video.track import VideoClip, VideoTrack
 from vmps.subtitle.subtitle import Subtitle
+from vmps.video.utils import has_audio_track
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.WARNING
@@ -57,12 +58,21 @@ class VMPSTask:
 
         ffmpeg_cmd = ["ffmpeg", "-y", "-v", "warning"]
         if self.video_track:
-            ffmpeg_cmd.extend(["-i", self.video_track.path.as_posix()])
+            video_path = self.video_track.path.as_posix()
+            ffmpeg_cmd.extend(["-i", video_path])
             if self.audio_track:
                 ffmpeg_cmd.extend(["-i", self.audio_track.path.as_posix()])
-                ffmpeg_cmd.extend(["-filter_complex", f"[1:a]apad,atrim=duration={self.video_track.duration}[aud]"])
-                ffmpeg_cmd.extend(["-map", "0:v"])
-                ffmpeg_cmd.extend(["-map", "[aud]"])
+
+                # 如果之前有音频，将两个音频混合
+                if has_audio_track(video_path):
+                    ffmpeg_cmd.extend(["-filter_complex", f"[1:a]apad,atrim=duration={self.video_track.duration}[aud];[0:a][aud]amix=inputs=2[amix]"])
+                    ffmpeg_cmd.extend(["-map", "0:v"])
+                    ffmpeg_cmd.extend(["-map", "[amix]"])
+                else:
+                    ffmpeg_cmd.extend(["-filter_complex", f"[1:a]apad,atrim=duration={self.video_track.duration}[aud]"])
+                    ffmpeg_cmd.extend(["-map", "0:v"])
+                    ffmpeg_cmd.extend(["-map", "[aud]"])
+
                 ffmpeg_cmd.extend(["-c:v", "libx264"])
                 ffmpeg_cmd.extend(["-c:a", "aac"])
             if self.subtitle:
@@ -77,6 +87,7 @@ class VMPSTask:
 
     def clean(self):
         shutil.rmtree(self.workspace)
+
 
 if __name__ == "__main__":
     with open("example/config.yaml") as f:
