@@ -65,7 +65,7 @@ class VMPSTask:
 
                 # 如果之前有音频，将两个音频混合
                 if has_audio_track(video_path):
-                    ffmpeg_cmd.extend(["-filter_complex", f"[1:a]apad,atrim=duration={self.video_track.duration}[aud];[0:a][aud]amix=inputs=2[amix]"])
+                    ffmpeg_cmd.extend(["-filter_complex", f"[1:a]apad,atrim=duration={self.video_track.duration}[aud];[0:a][aud]amix=inputs=2:duration=first[amix]"])
                     ffmpeg_cmd.extend(["-map", "0:v"])
                     ffmpeg_cmd.extend(["-map", "[amix]"])
                 else:
