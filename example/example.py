@@ -1,6 +1,6 @@
 from vmps.task import VMPSTask
 import yaml
-with open("example/config.yaml") as f:
+with open("test/test1.yaml") as f:
     config = yaml.safe_load(f)
-task = VMPSTask(config)
+task = VMPSTask("test", config)
 task.process()

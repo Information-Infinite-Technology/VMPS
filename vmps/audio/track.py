@@ -26,8 +26,9 @@ class AudioClip:
         clip: Optional[Tuple[str, str]] = None,
         channel: int = 0,
         volume: Optional[float] = None,
-        loop: bool = False,
+        loop: bool = True,
         sample_rate: Optional[int] = 44100,
+        shrink: str = "trim_end"
     ):
         """
         Args:
@@ -41,6 +42,7 @@ class AudioClip:
             volume: Volume of the audio clip, defaults to None (e.g. 0 means mute, 2 means double; or use Decibel values like 10dB, -5dB, see https://trac.ffmpeg.org/wiki/AudioVolume)
             loop: if True, clip will be looped to match the required duration
             sample_rate: Sample rate of the audio clip, defaults to 44100 Hz
+            shrink (str, optional): Shrink method. Options: "trim_start", "trim_end". Defaults to "trim_end".
         """
         self.workspace = Path(workspace)
         self.asset = data_dir / Path(path)
@@ -54,6 +56,7 @@ class AudioClip:
         self.track = track
         self.volume = volume
         self.loop = loop
+        self.shrink = shrink
         self.track.add_clip(self)
 
         self.workspace.mkdir(parents=True, exist_ok=True)
@@ -85,12 +88,16 @@ class AudioClip:
         actual_duration = round(actual_duration, 4)
         expected_duration = round(timecode2seconds(self.span[1]) - timecode2seconds(self.span[0]), 4)
         if actual_duration > expected_duration:
-            raise ValueError(
-                f"Actual duration {actual_duration} > expected duration {expected_duration}"
-            )
+            if self.shrink == "trim_start":
+                seek_start_time = round(actual_duration - expected_duration, 4)
+                ffmpeg_cmd.extend(["-ss", str(seek_start_time)])
+            elif self.shrink == "trim_end":
+                ffmpeg_cmd.extend(["-to", str(expected_duration)])
+            else:
+                raise NotImplementedError(f"Shrink method '{self.shrink}' is not implemented")
         elif actual_duration < expected_duration and not self.loop:
             raise ValueError(
-                f"Actual duration {actual_duration} < expected duration {expected_duration}, set loop=True to loop the clip"
+                f"Actual duration {actual_duration} < expected duration {expected_duration}, and loop is set to False"
             )
 
         filter_complex = []
